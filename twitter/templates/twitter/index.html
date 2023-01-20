@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 
@@ -6,20 +7,55 @@
     <title>
         Twitter Bot
     </title>
+    <!-- <link href="{% static 'twitter/styles.css'%}" rel="stylesheet" /> -->
+    <script>
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            let i = 0;
+            const loop = setInterval(() => {
+                if (i < 10) {
+                    add_message(["@eminGun", i, "LONG", "7:54PM 19/1/2023"]);
+                    i++;
+                } else {
+                    clearInterval(loop);
+                }
+            }, 1000);
+        });
+
+
+
+        function add_message(contents) {
+            const template = `<div class="user">${contents[0]}</div>
+                      <div class="stock">${contents[1]}</div>
+                      <div class="position">${contents[2]}</div>
+                      <div class="time">${contents[3]}</div>`;
+            const message = document.createElement('div');
+            message.classList.add('message');
+            message.innerHTML = template;
+            document.querySelector('#messages').append(message);
+        }
+
+    </script>
     <style>
         #messages {
-
             justify-content: space-between;
             align-items: center;
         }
 
         .message {
             display: flex;
+            align-items: center;
             background-color: #f8f8f8;
             padding: 8px;
             border-radius: 4px;
             box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2);
             margin-bottom: 8px;
+
+            flex-wrap: wrap;
+            font-size: 14px;
+            font-family: sans-serif;
+            color: #333;
         }
 
         .user,
@@ -35,35 +71,14 @@
         }
 
         .position {
-            color: #4CAF50;
+            color: #4caf50;
         }
     </style>
 </head>
 
 <body>
-    <div id="main">
 
-        <div id="messages">
-            <div class="message">
-                <div class="user">@eminGun</div>
-                <div class="stock">$TRX</div>
-                <div class="position">LONG</div>
-                <div class="time">7:54PM 19/1/2023</div>
-            </div>
-            <div class="message">
-                <div class="user">@eminGun</div>
-                <div class="stock">$TRX</div>
-                <div class="position">LONG</div>
-                <div class="time">7:54PM 19/1/2023</div>
-            </div>
-            <div class="message">
-                <div class="user">@eminGun</div>
-                <div class="stock">$TRX</div>
-                <div class="position">LONG</div>
-                <div class="time">7:54PM 19/1/2023</div>
-            </div>
-        </div>
-
+    <div id="messages">
 
     </div>
 </body>
