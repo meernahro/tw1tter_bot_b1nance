@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html>
 
@@ -7,37 +6,91 @@
     <title>
         Twitter Bot
     </title>
-    <!-- <link href="{% static 'twitter/styles.css'%}" rel="stylesheet" /> -->
-    <script>
 
+    <script>
+        let counter = 1;
+        let quantity = 20;
 
         document.addEventListener("DOMContentLoaded", () => {
-            let i = 0;
-            const loop = setInterval(() => {
-                if (i < 10) {
-                    add_message(["@eminGun", i, "LONG", "7:54PM 19/1/2023"]);
-                    i++;
-                } else {
-                    clearInterval(loop);
-                }
-            }, 1000);
+            // load();
+            add_message(["@sjeirjg", "long", "weergafg", "argdgfvc"])
+            add_message(["@sjeirjg", "long", "weergafg", "argdgfvc"])
         });
 
+        // loads a batch of messages by making a fetch request to a local endpoint with the "start" and "end" query parameters, which are determined by the current value of the "counter" variable and a fixed "quantity" value. The response is parsed as JSON and passed as an argument to the "add_message" function for each message in the data.
+        function load() {
+            const start = counter;
+            const end = start + quantity - 1;
+            counter = end + 1;
+
+            fetch(`/posts?start=${start}&end=${end}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.Posts.forEach(add_message);
+                }
+                );
+        }
 
 
+        // Takes in an array of contents, creates a new HTML element with the contents, adds a hide button to it, and adds it to the DOM.
         function add_message(contents) {
             const template = `<div class="user">${contents[0]}</div>
                       <div class="stock">${contents[1]}</div>
                       <div class="position">${contents[2]}</div>
-                      <div class="time">${contents[3]}</div>`;
+                      <div class="time">${contents[3]}</div>
+                      <button class="hide_button">X</button>`;
             const message = document.createElement('div');
             message.classList.add('message');
             message.innerHTML = template;
             document.querySelector('#messages').append(message);
         }
 
+        // adds an event listener to the hide button that animates and removes the message element when clicked.
+        document.addEventListener('click', event => {
+            const target = event.target;
+            if (target.classList.contains("hide_button")) {
+                const buttonsParent = target.parentElement;
+                buttonsParent.style.animationPlayState = 'running';
+                buttonsParent.addEventListener('animationend', event => {
+                    buttonsParent.remove();
+                });
+
+            }
+        });
+
+
     </script>
     <style>
+        @keyframes hide {
+            0% {
+                opacity: 1;
+                height: 100%;
+                line-height: 100%;
+                padding: 20px;
+                margin-bottom: 10px;
+            }
+
+            75% {
+                opacity: 0;
+                height: 100%;
+                line-height: 100%;
+                padding: 20px;
+                margin-bottom: 10px;
+            }
+
+            100% {
+                opacity: 0;
+                height: 0px;
+                line-height: 0px;
+                padding: 0px;
+                margin-bottom: 0px;
+            }
+
+
+        }
+
+
+
         #messages {
             justify-content: space-between;
             align-items: center;
@@ -51,11 +104,21 @@
             border-radius: 4px;
             box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.2);
             margin-bottom: 8px;
-
             flex-wrap: wrap;
             font-size: 14px;
             font-family: sans-serif;
             color: #333;
+            overflow: hidden;
+            height: 0;
+            padding: 0;
+            margin-bottom: 0;
+
+
+
+            animation-name: hide;
+            animation-duration: 2s;
+            animation-fill-mode: forwards;
+            animation-play-state: paused;
         }
 
         .user,
@@ -72,6 +135,30 @@
 
         .position {
             color: #4caf50;
+        }
+
+        .hide_button {
+            /* Add some basic styles */
+            background-color: transparent;
+            /* remove the background color */
+            color: #333;
+            /* set the text color to gray */
+
+            border: none;
+
+            font-size: 14px;
+            /* decrease the font size */
+
+            cursor: pointer;
+            /* change the cursor to pointer */
+
+
+        }
+
+        /* Add some hover styles */
+        .hide_button:hover {
+
+            font-weight: bold;
         }
     </style>
 </head>
