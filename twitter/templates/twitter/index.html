@@ -12,9 +12,7 @@
         let quantity = 20;
 
         document.addEventListener("DOMContentLoaded", () => {
-            // load();
-            add_message(["@sjeirjg", "long", "weergafg", "argdgfvc"])
-            add_message(["@sjeirjg", "long", "weergafg", "argdgfvc"])
+            load();
         });
 
         // loads a batch of messages by making a fetch request to a local endpoint with the "start" and "end" query parameters, which are determined by the current value of the "counter" variable and a fixed "quantity" value. The response is parsed as JSON and passed as an argument to the "add_message" function for each message in the data.
@@ -23,10 +21,11 @@
             const end = start + quantity - 1;
             counter = end + 1;
 
-            fetch(`/posts?start=${start}&end=${end}`)
+            fetch(`/actions?start=${start}&end=${end}`)
                 .then(response => response.json())
                 .then(data => {
-                    data.Posts.forEach(add_message);
+
+                    data.actions.forEach(add_message);
                 }
                 );
         }
@@ -53,11 +52,26 @@
                 buttonsParent.style.animationPlayState = 'running';
                 buttonsParent.addEventListener('animationend', event => {
                     buttonsParent.remove();
+                    keep20posts();
                 });
 
             }
         });
 
+        // listens for the user's scroll event and checks if the user has scrolled to the bottom of the page. If so, it calls the "load" function to fetch and add more posts to the page.
+        window.onscroll = () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+                load();
+            }
+        }
+
+        // checks the number of visible posts on the page, and if it is less than a certain number, it calls the "load" function to fetch and add more posts to the page.
+        function keep20posts() {
+            const visiblePosts = document.querySelectorAll('.message:not(.hide)');
+            if (visiblePosts.length < 11) {
+                load();
+            }
+        }
 
     </script>
     <style>
@@ -116,7 +130,7 @@
 
 
             animation-name: hide;
-            animation-duration: 2s;
+            animation-duration: 0.5s;
             animation-fill-mode: forwards;
             animation-play-state: paused;
         }
