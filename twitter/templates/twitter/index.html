@@ -8,27 +8,44 @@
     </title>
 
     <script>
+
+
+
         let counter = 1;
         let quantity = 20;
 
-        document.addEventListener("DOMContentLoaded", () => {
-            load();
-        });
+        document.addEventListener("DOMContentLoaded", () => { });
+
+
+        const twitterSocket = new WebSocket(`ws://${window.location.host}/ws/`);
+
+        twitterSocket.onopen = e => {
+            console.log("Socket opened")
+        }
+        twitterSocket.onmessage = e => {
+            const data = JSON.parse(e.data);
+            add_message(data)
+
+        }
+        twitterSocket.onclose = e => {
+            console.log("Socket closed!")
+        }
+
 
         // loads a batch of messages by making a fetch request to a local endpoint with the "start" and "end" query parameters, which are determined by the current value of the "counter" variable and a fixed "quantity" value. The response is parsed as JSON and passed as an argument to the "add_message" function for each message in the data.
-        function load() {
-            const start = counter;
-            const end = start + quantity - 1;
-            counter = end + 1;
+        // function load() {
+        //     const start = counter;
+        //     const end = start + quantity - 1;
+        //     counter = end + 1;
 
-            fetch(`/actions?start=${start}&end=${end}`)
-                .then(response => response.json())
-                .then(data => {
+        //     fetch(`/actions?start=${start}&end=${end}`)
+        //         .then(response => response.json())
+        //         .then(data => {
 
-                    data.actions.forEach(add_message);
-                }
-                );
-        }
+        //             data.actions.forEach(add_message);
+        //         }
+        //         );
+        // }
 
 
         // Takes in an array of contents, creates a new HTML element with the contents, adds a hide button to it, and adds it to the DOM.
@@ -41,7 +58,8 @@
             const message = document.createElement('div');
             message.classList.add('message');
             message.innerHTML = template;
-            document.querySelector('#messages').append(message);
+            document.querySelector('#messages').insertBefore(message, document.querySelector('#messages').firstChild);
+
         }
 
         // adds an event listener to the hide button that animates and removes the message element when clicked.
