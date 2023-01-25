@@ -1,0 +1,10 @@
+version: "3"
+services:
+  django:
+    build: .
+    ports:
+      - "6380:6380"
+    depends_on:
+      - redis
+  redis:
+    image: redis:5

@@ -1,21 +1,39 @@
+
+# import json
+import os
 import json
 
-from channels.generic.websocket import WebsocketConsumer
-from time import sleep
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
-class TwitterConsumer(WebsocketConsumer):
-    def connect(self):
-        self.accept()
-        for i in range(1,10):
-            self.send(text_data=json.dumps(["werty","1111111","111111",i]))
-            sleep(1)
+class TwitterConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.room_name =  os.getenv("ROOM_NAME")
+        self.room_group_name = os.getenv("ROOM_GROUP_NAME")
 
-    def disconnect(self, close_code):
-        pass
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
-    # def receive(self, text_data):
-    #     text_data_json = json.loads(text_data)
-    #     message = text_data_json["message"]
+        await self.accept()
+            
 
-    #     self.send(text_data=json.dumps({"message": message}))
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name, {"type": "chat_message", "message": message}
+        )
+
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps(message))
