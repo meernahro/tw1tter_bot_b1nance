@@ -21,7 +21,7 @@
 
         twitterSocket.onopen = e => {
             console.log("Socket opened")
-            load()
+
         }
         twitterSocket.onmessage = e => {
             const data = JSON.parse(e.data);
