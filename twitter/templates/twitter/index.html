@@ -15,8 +15,11 @@
         let counter = 1;
         let quantity = 20;
         let status;
+        let myaudio;
         document.addEventListener("DOMContentLoaded", () => {
             status = document.querySelector('#status');
+            myaudio = new Audio("{% static 'twitter/nokia_notification_start.mp3' %}")
+
         });
 
 
@@ -26,6 +29,7 @@
             status.innerText = 'Connected';
             status.style.color = 'green';
             console.log("Socket opened")
+
             // twitterSocket.send((JSON.stringify({
             //     group: 'internal',
             //     type: 'command',
@@ -73,6 +77,12 @@
 
         // Takes in an array of contents, creates a new HTML element with the contents, adds a hide button to it, and adds it to the DOM.
         function add_message(contents) {
+            try {
+                myaudio.play()
+            } catch (error) {
+                console.log("Failed playing audio")
+                console.log(error)
+            }
 
 
             const template = `<div class="user">${contents[0]}</div>
@@ -117,10 +127,7 @@
                 load();
             }
         }
-        function myplay() {
-            let audio = document.getElementById("notification");
-            audio.play();
-        }
+
     </script>
     <style>
         @keyframes show {
@@ -277,16 +284,32 @@
             border: none;
             border-radius: 4px;
         }
+
+        #noti {
+            position: fixed;
+            bottom: 10px;
+            left: 100px;
+            background-color: #f8f8f8;
+            padding: 5px 10px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            color: #333;
+            font-size: 14px;
+            font-family: sans-serif;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
 <body>
-    <audio id="notification" src="{% static 'twitter/nokia_notification_start.mp3' %}" preload="auto"></audio>
+    <!-- <audio id="notification" src="{% static 'twitter/nokia_notification_start.mp3' %}" preload="auto"></audio> -->
 
     <div id="messages">
 
     </div>
     <div id="status">Not Connected</div>
+    <button id="noti" onclick="{myaudio.play()}">Unmute</button>
 
 </body>
 
