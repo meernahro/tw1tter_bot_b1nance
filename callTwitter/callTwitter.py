@@ -84,10 +84,7 @@ class Listener(tweepy.StreamingClient):
 
 def start_listener():
     listener_obj = Listener(bearer_token=bearer_token)
-
-    rules = listener_obj.get_rules().data
-    print(rules)
-
+    
     # create a new thread for the listener
     tweet_fields = ["author_id","created_at","text"]
     # expansions=["referenced_tweets.id"]
