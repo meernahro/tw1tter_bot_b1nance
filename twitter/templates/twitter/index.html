@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 
@@ -13,54 +14,78 @@
 
         let counter = 1;
         let quantity = 20;
-
-        document.addEventListener("DOMContentLoaded", () => { });
+        let status;
+        document.addEventListener("DOMContentLoaded", () => {
+            status = document.querySelector('#status');
+        });
 
 
         const twitterSocket = new WebSocket(`ws://${window.location.host}/ws/`);
 
         twitterSocket.onopen = e => {
+            status.innerText = 'Connected';
+            status.style.color = 'green';
             console.log("Socket opened")
+            // twitterSocket.send((JSON.stringify({
+            //     group: 'internal',
+            //     type: 'command',
+            //     message: 'init'
+            // })));
 
         }
         twitterSocket.onmessage = e => {
             const data = JSON.parse(e.data);
-            add_message(data)
+            // add_message(data)
+            // if (data["type"] == "return") {
+            //     console.log(data['message'])
+            // }
+            if (data["type"] == "chat_message") {
+                add_message(data["message"])
+            }
 
         }
         twitterSocket.onclose = e => {
+            status.innerText = 'Not Connected';
+            status.style.color = 'red';
             console.log("Socket closed!")
+
         }
 
 
+
+
+
         // loads a batch of messages by making a fetch request to a local endpoint with the "start" and "end" query parameters, which are determined by the current value of the "counter" variable and a fixed "quantity" value. The response is parsed as JSON and passed as an argument to the "add_message" function for each message in the data.
-        // function load() {
-        //     const start = counter;
-        //     const end = start + quantity - 1;
-        //     counter = end + 1;
+        function load() {
+            const start = counter;
+            const end = start + quantity - 1;
+            counter = end + 1;
 
-        //     fetch(`/actions?start=${start}&end=${end}`)
-        //         .then(response => response.json())
-        //         .then(data => {
+            fetch(`/actions?start=${start}&end=${end}`)
+                .then(response => response.json())
+                .then(data => {
 
-        //             data.actions.forEach(add_message);
-        //         }
-        //         );
-        // }
-
+                    data.actions.forEach(console.log);
+                }
+                );
+        }
 
 
         // Takes in an array of contents, creates a new HTML element with the contents, adds a hide button to it, and adds it to the DOM.
         function add_message(contents) {
+
+
             const template = `<div class="user">${contents[0]}</div>
-                      <div class="stock">${contents[1]}</div>
-                      <div class="position">${contents[2]}</div>
+                      <div class="stock"><a href=${contents[2]}>${contents[1]}</a></div>
+                      <div class="position"> --- --- </div> 
                       <div class="time">${contents[3]}</div>
                       <button class="hide_button">X</button>`;
             const message = document.createElement('div');
             message.classList.add('message');
+            message.classList.add('new-message');
             message.innerHTML = template;
             document.querySelector('#messages').insertBefore(message, document.querySelector('#messages').firstChild);
+
 
         }
 
@@ -92,9 +117,45 @@
                 load();
             }
         }
-
+        function myplay() {
+            let audio = document.getElementById("notification");
+            audio.play();
+        }
     </script>
     <style>
+        @keyframes show {
+            0% {
+                opacity: 0;
+                height: 0px;
+                line-height: 0px;
+                padding: 0px;
+                margin-bottom: 0px;
+            }
+
+            75% {
+                opacity: 0;
+                height: 100%;
+                line-height: 100%;
+                padding: 20px;
+                margin-bottom: 10px;
+            }
+
+            100% {
+                opacity: 1;
+                height: 100%;
+                line-height: 100%;
+                padding: 20px;
+                margin-bottom: 10px;
+            }
+        }
+
+        .new-message {
+            animation-name: show;
+            animation-duration: 0.5s;
+            animation-fill-mode: forwards;
+        }
+
+
         @keyframes hide {
             0% {
                 opacity: 1;
@@ -123,6 +184,14 @@
 
         }
 
+        a {
+            font-family: Arial, sans-serif;
+            /* Change to desired font */
+            color: #333;
+            /* Change to desired color */
+            text-decoration: none;
+            /* Remove underline */
+        }
 
 
         #messages {
@@ -194,14 +263,31 @@
 
             font-weight: bold;
         }
+
+        #status {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: #f8f8f8;
+            padding: 5px 10px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            color: #333;
+            font-size: 14px;
+            font-family: sans-serif;
+            border: none;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
 <body>
+    <audio id="notification" src="{% static 'twitter/nokia_notification_start.mp3' %}" preload="auto"></audio>
 
     <div id="messages">
 
     </div>
+    <div id="status">Not Connected</div>
+
 </body>
 
 </html>

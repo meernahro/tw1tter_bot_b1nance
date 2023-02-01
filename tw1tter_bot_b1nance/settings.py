@@ -15,12 +15,14 @@ SECRET_KEY = 'django-insecure-0z79i@2ya+c&i1wq__g6_f&=@4)ygtom$v(q_vk4ul4t1x(+%g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['localhost','192.168.100.109','192.168.100.100']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'callTwitter',
     'daphne',
     'websocketProcessor',
     'twitter',
@@ -107,6 +109,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
+
+STATICFILES_DIRS = [
+        'static/',
+    ]
 
 STATIC_URL = 'static/'
 
