@@ -7,6 +7,9 @@
     <title>
         Twitter Bot
     </title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'twitter/favicon.ico' %}">
+
+
 
     <script>
 
@@ -70,6 +73,7 @@
                 .then(data => {
 
                     data.actions.forEach(console.log);
+
                 }
                 );
         }
@@ -93,6 +97,7 @@
             const message = document.createElement('div');
             message.classList.add('message');
             message.classList.add('new-message');
+            message.id = contents[4]
             message.innerHTML = template;
             document.querySelector('#messages').insertBefore(message, document.querySelector('#messages').firstChild);
 

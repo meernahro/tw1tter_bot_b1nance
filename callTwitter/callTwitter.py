@@ -33,41 +33,63 @@ for user in users:
 
 class Listener(tweepy.StreamingClient):
     
-    tweet = [0,0,0,0]
+    tweet = [0,0,0,0,0]
     
 
 
     def on_connect(self):
         print("Twitter Connected")
 
+
+# on_data returns this. if tweet is original, full text is returned
+# b'{"data":{"author_id":"2833017360","created_at":"2023-02-01T19:00:31.000Z","edit_history_tweet_ids":["1620859659946164225"],"id":"1620859659946164225","text":"Hard to believe that the February 1 terrorist attack was 19 years ago. Heartbreaking to see the lives cut short, their dreams &amp; potential unfulfilled, their families bereft of their love. But easy to believe the people of Kurdistan still stand proud and will never bow to tyranny"},"includes":{"tweets":[{"author_id":"2833017360","created_at":"2023-02-01T19:00:31.000Z","edit_history_tweet_ids":["1620859659946164225"],"id":"1620859659946164225","text":"Hard to believe that the February 1 terrorist attack was 19 years ago. Heartbreaking to see the lives cut short, their dreams &amp; potential unfulfilled, their families bereft of their love. But easy to believe the people of Kurdistan still stand proud and will never bow to tyranny"}]},"matching_rules":[{"id":"1620041380532740096","tag":""}]}'
+
+
+# on_data returns this. If tweet is retweet
+# b'{"data":{"author_id":"2833017360","created_at":"2023-02-01T18:57:14.000Z","edit_history_tweet_ids":["1620858830937812995"],"id":"1620858830937812995","referenced_tweets":[{"type":"retweeted","id":"1620620961015037952"}],"text":"RT @BayanRahman: Hard to believe that the February 1 terrorist attack was 19 years ago. Heartbreaking to see the lives cut short, their dre\xe2\x80\xa6"},"includes":{"tweets":[{"author_id":"2833017360","created_at":"2023-02-01T18:57:14.000Z","edit_history_tweet_ids":["1620858830937812995"],"id":"1620858830937812995","referenced_tweets":[{"type":"retweeted","id":"1620620961015037952"}],"text":"RT @BayanRahman: Hard to believe that the February 1 terrorist attack was 19 years ago. Heartbreaking to see the lives cut short, their dre\xe2\x80\xa6"},{"author_id":"28078770","created_at":"2023-02-01T03:12:01.000Z","edit_history_tweet_ids":["1620620961015037952"],"id":"1620620961015037952","text":"Hard to believe that the February 1 terrorist attack was 19 years ago. Heartbreaking to see the lives cut short, their dreams &amp; potential unfulfilled, their families bereft of their love. But easy to believe the people of Kurdistan still stand proud and will never bow to tyranny https://t.co/IGWnNDssZh"}]},"matching_rules":[{"id":"1620041380532740096","tag":""}]}'
+
+
     def on_data(self, raw_data):
-        
-        self.local_filter(raw_data)
+        self.extract_tweet_data(raw_data)
 
-    def local_filter(self,raw_data):
-        parsed_json = json.loads(raw_data)
 
+    def extract_tweet_data(self,tweet_string):
         try:
+            tweet = json.loads(tweet_string)
+            data = tweet["data"]
+            author_id = data["author_id"]
+            created_at = data["created_at"]
+            tweet_id = data["id"]
+            if "referenced_tweets" in data:
+                # tweet is a retweet
+                referenced_tweets = data["referenced_tweets"]
+                original_tweet = referenced_tweets[0]
+                original_tweet_id = original_tweet["id"]
+                includes = tweet["includes"]
+                original_tweets = includes["tweets"]
+                for original_tweet in original_tweets:
+                    if original_tweet["id"] == original_tweet_id:
+                        full_text = original_tweet["text"]
+                        break
+            else:
+                # tweet is original
+                full_text = data["text"]
+
             for user in users:
-                if users[user]==int(parsed_json['data']['author_id']):
+                if users[user]==int(author_id):
                     self.tweet[0] = user
-
-            self.tweet[1] = parsed_json['data']['text']
-            self.tweet[2] = f"https://twitter.com/{self.tweet[0]}/status/{parsed_json['data']['id']}"
-
-            
-            time_object = datetime.strptime(parsed_json['data']['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+            self.tweet[1] = full_text
+            self.tweet[2] = f"https://twitter.com/{self.tweet[0]}/status/{tweet_id}"
+            time_object = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
             time_object += timedelta(hours=3)
             formatted_time = time_object.strftime("%I:%M %p %d/%m/%Y")
 
             self.tweet[3] = formatted_time
-
-            sleep(0.5)
+            self.tweet[4] = tweet_id
+            print(self.tweet)
             self.send_message_to_group(self.tweet)
         except Exception as e:
-            print("Error in Local Filter",e)
-        
-        
+            print("Error extracting tweet data",e)
 
     def send_message_to_group(self,message):
 
@@ -87,9 +109,9 @@ def start_listener():
     
     # create a new thread for the listener
     tweet_fields = ["author_id","created_at","text"]
-    # expansions=["referenced_tweets.id"]
+    expansions=["referenced_tweets.id"]
     print("start listener is listeneing")
-    listener_obj.filter(tweet_fields=tweet_fields)
+    listener_obj.filter(tweet_fields=tweet_fields,expansions=expansions)
 
 def follow_user(username):
     try:
