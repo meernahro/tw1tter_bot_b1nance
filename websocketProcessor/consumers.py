@@ -1,7 +1,8 @@
 import os
 import json
-
+from database_manager import models
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 
 
 class TwitterConsumer(AsyncWebsocketConsumer):
@@ -44,7 +45,10 @@ class TwitterConsumer(AsyncWebsocketConsumer):
             print("Failed sending to socket ", e)
 
     async def command(self, event):
-            pass
+        
+        message = event['message']
             
+        if message['function'] == "delete_tweet_by_id":
+            await sync_to_async(models.delete_tweet_by_id)(int(message['id']))
 
         

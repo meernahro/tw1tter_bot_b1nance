@@ -1,12 +1,14 @@
 from django.db import models
 import datetime
 
+
 class Tweet(models.Model):
+    
     user = models.CharField(max_length=200)
     text = models.TextField()
     link = models.URLField()
     time = models.DateTimeField()
-    tweet_id = models.BigIntegerField(primary_key=True)
+    tweet_id = models.BigIntegerField()
 
     def save(self, *args, **kwargs):
         time_str = self.time
@@ -27,19 +29,43 @@ def create_tweet(tweet_arr):
         return False
     
 
-def delete_tweet_by_id(tweet_id):
+def delete_tweet_by_id(id):
     try:
-        tweet = Tweet.objects.get(tweet_id=tweet_id)
+        tweet = Tweet.objects.get(id=id)
         tweet.delete()
+        print(id)
+        return True
     except Tweet.DoesNotExist:
         return False
 
-def get_tweet_by_id(tweet_id):
+def get_tweet_by_tweet_id(tweet_id):
     try:
         tweet = Tweet.objects.get(tweet_id=tweet_id)
         return tweet
     except Tweet.DoesNotExist:
+        print("No tweets found within the specified ID.")
         return False
+
+def get_tweet_by_range(start_id, end_id):
+    
+    if start_id == 0 and end_id ==0:
+
+        try:
+            last_tweet = Tweet.objects.latest('id')
+            last_id = last_tweet.id
+
+            tweets = Tweet.objects.filter(id__range=(last_id-20, last_id))
+            return tweets
+        except Tweet.DoesNotExist:
+            print("No tweets found within the specified ID range.")
+            return False
+    else:
+        try:
+            tweets = Tweet.objects.filter(id__range=(start_id, end_id)).order_by('-id')
+            return tweets
+        except Tweet.DoesNotExist:
+            print("No tweets found within the specified ID range.")
+            return False
 
 
 

@@ -5,6 +5,9 @@ from time import sleep
 from datetime import datetime,timedelta
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from database_manager import models
+
+from database_manager import models
 
 api_key = getenv("TWITTER_KEY")
 api_key_secret = getenv("TWITTER_SECRET")
@@ -94,8 +97,12 @@ class Listener(tweepy.StreamingClient):
     def send_message_to_group(self,message):
 
         try:
+            # this statement sends the tweet to database
+            models.create_tweet(message)
+            tweet = models.get_tweet_by_tweet_id(message[4])
+            mytweet = [tweet.user,tweet.text,tweet.link,str(tweet.time),tweet.id]
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(getenv("ROOM_GROUP_NAME"), {"type": "chat_message", "message": message})
+            async_to_sync(channel_layer.group_send)(getenv("ROOM_GROUP_NAME"), {"type": "chat_message", "message": mytweet})
             print("callTwitter sent message to group Successfuly")
         
         except Exception as e:

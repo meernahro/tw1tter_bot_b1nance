@@ -4,24 +4,26 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 import os
 import asyncio
+from database_manager import models
 
 def index(request):
     return render(request,"twitter/index.html")
     
 
 def actions(request):
-
+    
     # Get start and end points
     start = int(request.GET.get("start") or 0)
-    end = int(request.GET.get("end") or (start + 9))
-
-    # Generate list of arbitrary data and pack it up and send it
-    def generateData():
-        return(["wertgvc","wertg","qazxw","poiuiolk"])
-
+    end = int(request.GET.get("end") or 0)
     data = []
-    for i in range(start, end+1):
-        data.append(generateData())
+
+    tweets = models.get_tweet_by_range(start,end)
+    for tweet in tweets:
+        print(tweet.id)
+        mytweet = [tweet.user,tweet.text,tweet.link,tweet.time,tweet.id]
+        data.append(mytweet)
+        
+
 
     return JsonResponse({
         "actions":data

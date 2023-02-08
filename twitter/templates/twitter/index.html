@@ -15,8 +15,8 @@
 
 
 
-        let counter = 1;
-        let quantity = 20;
+
+        let quantity = 10;
         let status;
         let myaudio;
         document.addEventListener("DOMContentLoaded", () => {
@@ -32,12 +32,9 @@
             status.innerText = 'Connected';
             status.style.color = 'green';
             console.log("Socket opened")
+            load(0)
 
-            // twitterSocket.send((JSON.stringify({
-            //     group: 'internal',
-            //     type: 'command',
-            //     message: 'init'
-            // })));
+
 
         }
         twitterSocket.onmessage = e => {
@@ -47,7 +44,7 @@
             //     console.log(data['message'])
             // }
             if (data["type"] == "chat_message") {
-                add_message(data["message"])
+                add_message(data["message"], 0)
             }
 
         }
@@ -57,30 +54,52 @@
             console.log("Socket closed!")
 
         }
-
+        function delete_tweet(id) {
+            twitterSocket.send((JSON.stringify({
+                group: 'internal',
+                type: 'command',
+                message: { function: 'delete_tweet_by_id', id: id }
+            })));
+        }
 
 
 
 
         // loads a batch of messages by making a fetch request to a local endpoint with the "start" and "end" query parameters, which are determined by the current value of the "counter" variable and a fixed "quantity" value. The response is parsed as JSON and passed as an argument to the "add_message" function for each message in the data.
-        function load() {
-            const start = counter;
-            const end = start + quantity - 1;
-            counter = end + 1;
+        function load(command) {
 
-            fetch(`/actions?start=${start}&end=${end}`)
-                .then(response => response.json())
-                .then(data => {
+            if (command == 0) {
+                console.log("fucckckck")
+                fetch(`/actions`)
+                    .then(response => response.json())
+                    .then(data => {
 
-                    data.actions.forEach(console.log);
+                        data.actions.forEach(action => add_message(action, command));
 
-                }
-                );
+                    }
+                    );
+            } else if (command == 1) {
+                const lowestMessage = document.querySelector(".message:last-child");
+                const end = lowestMessage.getAttribute("id") - 1;
+                const start = end - quantity < 0 ? 0 : end - quantity;
+
+
+
+
+                fetch(`/actions?start=${start}&end=${end}`)
+                    .then(response => response.json())
+                    .then(data => {
+
+                        data.actions.forEach(action => add_message(action, command));
+
+                    }
+                    );
+            }
         }
 
 
         // Takes in an array of contents, creates a new HTML element with the contents, adds a hide button to it, and adds it to the DOM.
-        function add_message(contents) {
+        function add_message(contents, command) {
             try {
                 myaudio.play()
             } catch (error) {
@@ -99,7 +118,11 @@
             message.classList.add('new-message');
             message.id = contents[4]
             message.innerHTML = template;
-            document.querySelector('#messages').insertBefore(message, document.querySelector('#messages').firstChild);
+            if (command == 0) {
+                document.querySelector('#messages').insertBefore(message, document.querySelector('#messages').firstChild);
+            } else {
+                document.querySelector('#messages').appendChild(message);
+            }
 
 
         }
@@ -109,6 +132,8 @@
             const target = event.target;
             if (target.classList.contains("hide_button")) {
                 const buttonsParent = target.parentElement;
+                const id_to_delete = buttonsParent.getAttribute("id")
+                delete_tweet(id_to_delete)
                 buttonsParent.style.animationPlayState = 'running';
                 buttonsParent.addEventListener('animationend', event => {
                     buttonsParent.remove();
@@ -118,18 +143,29 @@
             }
         });
 
-        // listens for the user's scroll event and checks if the user has scrolled to the bottom of the page. If so, it calls the "load" function to fetch and add more posts to the page.
-        window.onscroll = () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-                load();
+        function debouncedLoad() {
+            let timeoutId;
+
+            return function () {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => load(1), 500);
             }
         }
+        const debouncedFunction = debouncedLoad();
+        // listens for the user's scroll event and checks if the user has scrolled to the bottom of the page. If so, it calls the "load" function to fetch and add more posts to the page.
+
+
+        window.onscroll = () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+                debouncedFunction();
+            }
+        };
 
         // checks the number of visible posts on the page, and if it is less than a certain number, it calls the "load" function to fetch and add more posts to the page.
         function keep20posts() {
             const visiblePosts = document.querySelectorAll('.message:not(.hide)');
             if (visiblePosts.length < 11) {
-                load();
+                load(1);
             }
         }
 
