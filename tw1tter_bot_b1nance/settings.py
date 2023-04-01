@@ -22,6 +22,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'analyze_tweet',
     'database_manager',
     'callTwitter',
     'daphne',

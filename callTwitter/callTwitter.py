@@ -7,7 +7,9 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from database_manager import models
 
-from database_manager import models
+
+from analyze_tweet.analyze_tweet import TweetAnalyzer
+import threading
 
 api_key = getenv("TWITTER_KEY")
 api_key_secret = getenv("TWITTER_SECRET")
@@ -22,7 +24,7 @@ api = tweepy.API(auth)
 
 users = {
     "mark_cullen": 0,
-    "LukeTradesz": 1,
+    "__bleeker":1,
     "ShardiB2": 2,
     "NahroBarznji": 3,
     "meer_barznji": 4,
@@ -31,8 +33,7 @@ users = {
     "DarkCryptoLord": 7,
     "NachoTrades": 8
     }
-for user in users:
-    users[user] = api.get_user(screen_name=user).id   
+
 
 class Listener(tweepy.StreamingClient):
     
@@ -78,9 +79,9 @@ class Listener(tweepy.StreamingClient):
                 # tweet is original
                 full_text = data["text"]
 
-            for user in users:
-                if users[user]==int(author_id):
-                    self.tweet[0] = user
+            my_user_name = models.get_User_by_id(author_id).user_name
+            
+            self.tweet[0] = my_user_name
             self.tweet[1] = full_text
             self.tweet[2] = f"https://twitter.com/{self.tweet[0]}/status/{tweet_id}"
             time_object = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -89,65 +90,91 @@ class Listener(tweepy.StreamingClient):
 
             self.tweet[3] = formatted_time
             self.tweet[4] = tweet_id
-            print(self.tweet)
             self.send_message_to_group(self.tweet)
         except Exception as e:
-            print("Error extracting tweet data",e)
+            print("Error: Line 95 callTwitter",e)
 
     def send_message_to_group(self,message):
-
+        
         try:
+            
             # this statement sends the tweet to database
             models.create_tweet(message)
             tweet = models.get_tweet_by_tweet_id(message[4])
-            mytweet = [tweet.user,tweet.text,tweet.link,str(tweet.time),tweet.id]
+            
+            name = tweet.user.user_name
+            print(name)
+            formatted_time = tweet.time.strftime("%I:%M %p %d/%m/%Y")
+            mytweet = [name,tweet.text,tweet.link,formatted_time,tweet.id]
+
+            token_obj = TweetAnalyzer(tweet.id)
+            analyze_thread = threading.Thread(target=token_obj.analyze)
+            analyze_thread.start()
+            print("analyze_thread started")
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(getenv("ROOM_GROUP_NAME"), {"type": "chat_message", "message": mytweet})
             print("callTwitter sent message to group Successfuly")
         
         except Exception as e:
-            print("Error sending message to group ",e)
+            print("Error: Line 119 callTwitter",e)
 
 
-
+obj = Listener(bearer_token=bearer_token)
 
 def start_listener():
-    listener_obj = Listener(bearer_token=bearer_token)
+    # listener_obj = Listener(bearer_token=bearer_token)
     
     # create a new thread for the listener
     tweet_fields = ["author_id","created_at","text"]
     expansions=["referenced_tweets.id"]
+    
+    obj.filter(tweet_fields=tweet_fields,expansions=expansions)
+    
     print("start listener is listeneing")
-    listener_obj.filter(tweet_fields=tweet_fields,expansions=expansions)
 
 def follow_user(username):
     try:
-        follow_obj = Listener(bearer_token=bearer_token)
+        # follow_obj = Listener(bearer_token=bearer_token)
         userid = api.get_user(screen_name=username).id
-        response = follow_obj.add_rules(tweepy.StreamRule(value=f"from:{userid}"))
+        response = obj.add_rules(tweepy.StreamRule(value=f"from:{userid}"))
+        print(userid)
+        print(response)
         created = response[3]['summary']['created']
         valid = response[3]['summary']['valid']
+        rule_id = response.data[0].id
+        print(rule_id)
+        print(created)
+        print(valid)
         if (created==1 and valid ==1):
+            models.create_User(username,userid)
+            models.create_Rule(rule_id,username)
             return True
         else:
             return False
     except Exception as e:
-        print("Error following user",e)
+        print("Error: Line 155 callTwitter",e)
+        # response=Response(data=[StreamRule(value='from:1518981537307496448', tag=None, id='1626494120624619522')], includes={}, errors=[], meta={'sent': '2023-02-17T08:09:52.932Z', 'summary': {'created': 1, 'not_created': 0, 'valid': 1, 'invalid': 0}})
 
     
     
 def get_rule(id):
-    get_rule_obj = Listener(bearer_token=bearer_token)
-    get_rule_obj.get_rules(id).data
+    # get_rule_obj = Listener(bearer_token=bearer_token)
+    return obj.get_rules(id)
+
+def get_rule():
+    # get_rule_obj = Listener(bearer_token=bearer_token)
+    return obj.get_rules()
 
 def delete_rule(id):
-    delete_rule_obj = Listener(bearer_token=bearer_token)
-    delete_rule_obj.delete_rules(id)
+    # delete_rule_obj = Listener(bearer_token=bearer_token)
+    obj.delete_rules(id)
+    models.delete_Rule_by_id(id)
 
+def unfollow_user(username):
+    try:
+        rule_id = models.get_rule_by_user(username)
+        obj.delete_rules(rule_id)
 
-
-
-
-
-
+    except Exception as e:
+        print("Error: Line 179 callTwitter",e)
 

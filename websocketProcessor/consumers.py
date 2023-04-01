@@ -51,4 +51,12 @@ class TwitterConsumer(AsyncWebsocketConsumer):
         if message['function'] == "delete_tweet_by_id":
             await sync_to_async(models.delete_tweet_by_id)(int(message['id']))
 
+    async def sentiment(self,event):
+        message = json.dumps(event)
         
+        try:
+        # Send message to WebSocket
+            await self.send(text_data=message)
+            print("Sent Message to Socket")
+        except Exception as e:
+            print("Failed sending to socket ", e)

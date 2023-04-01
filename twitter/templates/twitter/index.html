@@ -46,6 +46,9 @@
             if (data["type"] == "chat_message") {
                 add_message(data["message"], 0)
             }
+            if (data["type"] == "sentiment") {
+                updateMessage(data["message"])
+            }
 
         }
         twitterSocket.onclose = e => {
@@ -81,9 +84,10 @@
             } else if (command == 1) {
                 const lowestMessage = document.querySelector(".message:last-child");
                 const end = lowestMessage.getAttribute("id") - 1;
-                const start = end - quantity < 0 ? 0 : end - quantity;
+                const start = end - quantity;
 
-
+                console.log(start)
+                console.log(end)
 
 
                 fetch(`/actions?start=${start}&end=${end}`)
@@ -124,8 +128,21 @@
                 document.querySelector('#messages').appendChild(message);
             }
 
+            if (contents[5]) {
+                updateMessage([contents[5], contents[4]])
+            }
 
         }
+
+        function updateMessage(contents) {
+            try {
+                let position = document.querySelector(`.message[id="${contents[1]}"] .position`);
+                position.innerText = contents[0].replace(/<br\s*\/?>/gi, "\n");
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
 
         // adds an event listener to the hide button that animates and removes the message element when clicked.
         document.addEventListener('click', event => {

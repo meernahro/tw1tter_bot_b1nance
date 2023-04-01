@@ -16,20 +16,44 @@ def actions(request):
     start = int(request.GET.get("start") or 0)
     end = int(request.GET.get("end") or 0)
     data = []
-
-    tweets = models.get_tweet_by_range(start,end)
-    for tweet in tweets:
-        print(tweet.id)
-        mytweet = [tweet.user,tweet.text,tweet.link,tweet.time,tweet.id]
-        data.append(mytweet)
+    try:
+        tweets = models.get_tweet_by_range(start,end)
         
+        for tweet in tweets:
+            
+            try:
+                name = tweet.user.user_name
+                
+                formatted_time = tweet.time.strftime("%I:%M %p %d/%m/%Y")
+                mytweet = [name,tweet.text,tweet.link,formatted_time,tweet.id]
+                text =""
+            except Exception as e:
+                print("Error Line 31 views ", e)
+            try:
+                tokens = models.get_token_by_tweet_id(tweet.id)
+                
+                for token in tokens:
+                    text+=f"{token.token}:{token.sentiment}<br />"
 
+                mytweet.append(text)
+            except:
+                pass
+            
+            data.append(mytweet)
+    
+        
+        return JsonResponse({
+            "actions":data
+        })
 
-    return JsonResponse({
-        "actions":data
-    })
-
-
+    except Exception as e:
+        print("Error: Line 50 views",e)
+        
+        return JsonResponse({
+            "actions":""
+        })
+        
+# dfgh
 
 # This is to be used in a separate app
 # This function sends a message to a specific group, identified by the ROOM_GROUP_NAME environment variable. It uses the async_to_sync function to send the message asynchronously through the channel layer, and sends a message of type "chat_message" with the provided message. This function can be used in views or other synchronous parts of the code to send messages to a group of connected websocket clients.
